@@ -54,6 +54,14 @@ print(head(data_1))
 print(dim(data_1))
 
 ```
+
+```{r}
+summary(data_1)
+```
+
+
+
+
 ```{r}
 melted_data_1 <- melt(data_1, value.name = 'expression')
 
@@ -91,17 +99,15 @@ heatmap_plot
 
 
 
-### Data analysis
+### Data preprocessing
 
 The analysis of the datasets is performed using the R package "Seurat". It is one of the most famous packages for scRNA seq data analysis that is used in most papers.
 
 
 ```{r}
 
-#initialize the Seurate object
-
-
-
+#initialize the Seurat object
+data1_seurat <- CreateSeuratObject(counts = data_1, project = 'Dataset 1')
 
 
 ```
