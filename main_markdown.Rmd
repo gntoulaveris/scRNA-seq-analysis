@@ -1,0 +1,111 @@
+---
+title: "main_analysis"
+author: "Grigoris Ntoulaveris"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+# Single Cell RNA sequence data analysis
+
+The following is a markdown file of the single cell RNA seq analysis. A total of 5 synthetically generated datasets were analyzed. Each dataset provided the gene expression profiles (200 Genes) of 200 cells in .csv format. The datasets were read and analyzed individually, as they were considered to be from different samples or experiments.
+ \
+ \
+To replicate the code the following packages in comment sections need to be installed and loaded first.
+
+
+```{r}
+
+#install.packages("Seurat")
+#install.packages("tidyverse")
+#install.packages("reshape2")
+
+```
+
+
+```{r}
+#library(rlang)
+#library(htmltools)
+#library(Seurat)
+#library(tidyverse)
+#library(knitr)
+#library(utils)
+#library(reshape2)
+
+```
+
+## Dataset 1
+
+### Data exploration
+
+
+```{r}
+
+datasets_path <- "Assignment_3_2023_datasets.zip"
+
+data_1 <- read.csv(unz(datasets_path, "dataset1.csv"), sep=",")
+
+print(head(data_1))
+
+```
+
+```{r}
+
+print(dim(data_1))
+
+```
+```{r}
+melted_data_1 <- melt(data_1, value.name = 'expression')
+
+melted_data_1 <- melted_data_1 %>%
+  rename(cells = "X", genes = "variable")
+
+```
+
+```{r}
+
+# compute the library size for each cell
+library_size_1 <- melted_data_1 %>%
+  group_by(cells) %>%
+  summarise(library_size = sum(expression))
+
+print(library_size_1)
+
+
+```
+
+
+
+```{r}
+
+heatmap_plot <- ggplot(melted_data_1, aes(x = genes, y = cells, fill = expression)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +  
+  labs(x = "Genes", y = "Cells", title = "Gene Expression Heatmap")
+
+heatmap_plot
+
+```
+
+
+
+
+
+### Data analysis
+
+The analysis of the datasets is performed using the R package "Seurat". It is one of the most famous packages for scRNA seq data analysis that is used in most papers.
+
+
+```{r}
+
+#initialize the Seurate object
+
+
+
+
+
+```
+
+
+
+
