@@ -212,6 +212,8 @@ str(data1_seurat)
 
 The 10 most high variable genes were identified next. The intuition behind this step was to focus on the subset of genes that exhibit the greatest variation across cells. These genes are more likely to capture biologically relevant differences and can help prioritize the genes for downstream analysis.
 
+It appears that all 200 genes are highly variable. The top 10 most high variable genes are presented in the scatter plot below.
+
 ```{r}
 
 # find all high variable genes
@@ -230,6 +232,27 @@ LabelPoints(plot = plot_variable_genes, points = top10_genes, repel = TRUE)
 
 
 ```
+
+### Data Scaling
+
+This step is performed to remove unwanted variations in the data, that occur because of technical issues (eg batch effect) or biological issues (eg difference state of the cell cycle between some cells). These variations need to be removed so that the cells won't cluster together based on them, but rather based on biological similarity and effect.
+
+
+```{r}
+
+all_genes <- rownames(data1_seurat)
+data1_seurat <- ScaleData(data1_seurat, features = all_genes)
+
+
+```
+
+### Dimensionality reduction
+
+Dimensionality reduction of the expression matrix is performed to identify the sources of heterogeneity and visualize the high-dimensional dataset. It is going to be performed with three different times with three different methods. 
+
+
+
+
 
 
 
