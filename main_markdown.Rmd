@@ -1,5 +1,5 @@
 ---
-title: "main_analysis"
+title: "Single Cell RNA seq analysis (Dataset 1)"
 author: "Grigoris Ntoulaveris"
 date: "`r Sys.Date()`"
 output: html_document
@@ -24,13 +24,14 @@ To replicate the code the following packages in comment sections need to be inst
 
 
 ```{r}
-#library(rlang)
-#library(htmltools)
-#library(Seurat)
-#library(tidyverse)
-#library(knitr)
-#library(utils)
-#library(reshape2)
+library(rlang)
+library(htmltools)
+library(Seurat)
+library(dplyr)
+library(ggplot2)
+library(knitr)
+library(utils)
+library(reshape2)
 
 ```
 
@@ -103,15 +104,132 @@ heatmap_plot
 
 The analysis of the datasets is performed using the R package "Seurat". It is one of the most famous packages for scRNA seq data analysis that is used in most papers.
 
+```{r}
+data_1_copy <- data.frame(data_1)
+
+rownames(data_1_copy) <- as.character(data_1_copy[, 1])
+
+data_1_copy <- data_1_copy[, -1]
+
+```
 
 ```{r}
 
-#initialize the Seurat object
-data1_seurat <- CreateSeuratObject(counts = data_1, project = 'Dataset 1')
+# transpose data matrix to be in correct format to be fit in a seurat object
+data_1_transpose <- t(data_1_copy)
 
 
 ```
 
+```{r}
+
+#initialize the Seurat object
+data1_seurat <- CreateSeuratObject(counts = data_1_transpose, project = 'Dataset 1')
+
+str(data1_seurat)
+
+data1_seurat
+
+
+```
+
+### Quality control
+
+Quality control is an essential step in a scRNA seq pipeline to ensure reliability and accuracy for the data. It is performed in order to filter out low-quality cells. 
+
+Low-quality cells can cells that express too little genes or cells that express too many genes, which can be a case of multiple cells clustered together and recognized as a single cell. The cells that have a high expression of mitochondrial genes also need to be filtered out, because high mitochondrial gene expression is observed in dying cells.
+
+
+```{r}
+
+print(data1_seurat@meta.data)
+
+
+```
+
+```{r}
+
+# find percentage of mitochondrial genes
+data1_seurat[["percent_mito"]] <- PercentageFeatureSet(data1_seurat, pattern = "^MT-")
+
+print(data1_seurat@meta.data)
+
+
+```
+In the following plots the nCount_RNA corresponds to the total number of RNA molecules detected in a cell, which can be considered as a measure of the cell's RNA content or overall expression level. nFeature_RNA represents the count of unique genes or features with non-zero expression in a cell and is an indicator of the diversity of expressed genes in a cell. percent_mito corresponds to the percentage of mitochondrial genes that are expressed in a cell and a high number is indicative of cells of low-quality.
+
+Based on the following violin plots it appears that there is an almost even distribution of cells with a high and low number of total RNA molecules. The same is true when we consider the total amount of unique genes in each cell. For both metrics the spectrum of the values is not very large though, indicating that the cells of the dataset are mostly of the same quality and expression. No mitochondrial gene expression was also detected therefore there are no dying cells in the mixture.
+
+
+```{r}
+
+VlnPlot(data1_seurat, features = c("nCount_RNA", "nFeature_RNA", "percent_mito"), ncol = 3)
+
+
+```
+
+In the following plot the total number of RNA molecules and the total number of unique genes for each cell are plotted together, to ensure that the previous visualization is not misleading in terms of cell quality. Good quality cells usually have a high value in both metrics. If many cells are clustered towards the bottom right of the plot it would mean that only a few number of unique genes were detected and those are sequenced continuously providing a misleading high number of transcripts. If many cells are clustered towards the top left of the plot it would mean that the sequencer had discovered many unique genes but they wouldn't be deeply sequenced enough to provide meaningful reasults.
+
+As it stands most of the cells seem to be of good quality, however there is need for removal of a small number of low-quality cells.
+
+
+
+```{r}
+
+FeatureScatter(data1_seurat, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") +
+  geom_smooth(method = 'lm')
+
+```
+
+### Filtering 
+
+In the filtering step low-quality cells are removed from the dataset, based on the results of the quality control. 
+
+
+```{r}
+
+data1_seurat <- subset(data1_seurat, subset = nFeature_RNA > 160 & nFeature_RNA < 1000 & 
+                          percent.mt < 5)
+
+data1_seurat
+
+```
+
+### Data Normalization
+
+In order to be able to compare the levels of expression across multiple cells the data need to be normalized. The gene expression measurements for each cell is divided by the total expression of all cells, is then multiplied by a scaling factor. The result is also transformed into log space.
+
+
+```{r}
+
+data1_seurat <- NormalizeData(data1_seurat)
+
+str(data1_seurat)
+
+```
+
+### High variable genes identification
+
+The 10 most high variable genes were identified next. The intuition behind this step was to focus on the subset of genes that exhibit the greatest variation across cells. These genes are more likely to capture biologically relevant differences and can help prioritize the genes for downstream analysis.
+
+```{r}
+
+# find all high variable genes
+data1_seurat <- FindVariableFeatures(data1_seurat, selection.method = "vst", nfeatures = 2000)
+
+# find the top 10 high variable genes
+top10_genes <- head(VariableFeatures(data1_seurat), 10)
+
+
+```
+
+```{r}
+
+plot_variable_genes <- VariableFeaturePlot(data1_seurat)
+LabelPoints(plot = plot_variable_genes, points = top10_genes, repel = TRUE)
+
+
+```
 
 
 
