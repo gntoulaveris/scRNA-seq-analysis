@@ -19,6 +19,13 @@ To replicate the code the following packages in comment sections need to be inst
 #install.packages("Seurat")
 #install.packages("tidyverse")
 #install.packages("reshape2")
+#install.packages("mclust")
+#install.packages('installr')
+#install.packages("rtools")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("Matrix")
+
 
 ```
 
@@ -32,6 +39,9 @@ library(ggplot2)
 library(knitr)
 library(utils)
 library(reshape2)
+library(mclust, quietly = TRUE)
+library(Matrix)
+library(installr)
 
 ```
 
@@ -189,7 +199,7 @@ In the filtering step low-quality cells are removed from the dataset, based on t
 ```{r}
 
 data1_seurat <- subset(data1_seurat, subset = nFeature_RNA > 160 & nFeature_RNA < 1000 & 
-                          percent.mt < 5)
+                          percent_mito < 5)
 
 data1_seurat
 
@@ -248,10 +258,74 @@ data1_seurat <- ScaleData(data1_seurat, features = all_genes)
 
 ### Dimensionality reduction
 
-Dimensionality reduction of the expression matrix is performed to identify the sources of heterogeneity and visualize the high-dimensional dataset. It is going to be performed with three different times with three different methods. 
+Dimensionality reduction of the expression matrix is performed to identify the sources of heterogeneity and visualize the high-dimensional dataset. It is going to be performed three different times with three different methods. Those methods are PCA, tsne, UMAP.
+
+#### PCA
 
 
+The features (genes) listed in each PC heatmap are the ones that capture the heterogeneity of the data.
 
+```{r}
+
+data1_seurat <- RunPCA(data1_seurat, features = VariableFeatures(object = data1_seurat))
+
+# visualize PCA results
+print(data1_seurat[["pca"]], dims = 1:5, nfeatures = 5) # for top 5 PCs
+DimHeatmap(data1_seurat, dims = 1:6, cells = 197, balanced = TRUE)
+
+```
+
+In order to determine the number of principal components that will be used the scree plot will utilized.  The scree plot displays the eigenvalues (variance explained) of each principal component. The plot shows a decreasing curve, and the point where the curve starts to level off indicates the number of dimensions that capture most of the variation in the data. We will look for the "elbow" in the scree plot where adding more dimensions does not contribute significantly to the explained variance.
+
+Based on the scree plot below a number of 16 first PC's will be chosen. After them the percentage of the variance explained doesn't change much. A lower number of PC's could have been chosen, however a lower number of PC's could have had negative effects on the rest of the downstream analysis. 
+
+```{r}
+
+ElbowPlot(data1_seurat)
+
+
+```
+
+
+### Clustering
+
+#### Clustering with PCA
+The package "mclust" is utilized to cluster the data based on Gaussian Mixture Models. (### explain)
+
+
+```{r}
+
+# select the first 16 PC's
+data1_seurat <- ProjectDim(data1_seurat, reduction = "pca", dims = 1:16)
+
+# extract the PCA cell embeddings
+pca_embeddings <- as.matrix(data1_seurat@reductions$pca@cell.embeddings)
+
+
+```
+
+```{r}
+
+# perform GMM clustering using the cluster package
+gmm_model <- Mclust(pca_embeddings)
+cluster_ids <- gmm_model$classification
+
+# assign the cluster identities to the Seurat object
+Idents(data1_seurat) <- as.character(cluster_ids)
+
+
+```
+
+```{r}
+data1_seurat@meta.data
+
+```
+
+```{r}
+
+plot(gmm_model)
+
+```
 
 
 
