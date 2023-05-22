@@ -344,7 +344,9 @@ plot_df <- data.frame(pct = pct,
   geom_text() + 
   geom_vline(xintercept = 90, color = "grey") + 
   geom_hline(yintercept = min(pct[pct > 5]), color = "grey") +
-  theme_bw()
+  theme_bw() +
+  labs(x = "Cumulative Variance (%)", y = "Variance Explained (%)", 
+       title = "Rank of PC's from PCA according to their explained variance")
 
 
 ```
@@ -383,7 +385,7 @@ pca_embeddings <- as.matrix(data1_seurat@reductions$pca@cell.embeddings)
 ```{r}
 
 # perform GMM clustering using the cluster package
-gmm_model <- Mclust(pca_embeddings[1:2])
+gmm_model <- Mclust(pca_embeddings[ ,1:2])
 cluster_ids <- gmm_model$classification
 
 # assign the cluster identities to the Seurat object
@@ -402,7 +404,8 @@ data1_seurat@meta.data
 ```{r}
 
 # Visualize clusters with DimPlot
-plot_clusters <- DimPlot(data1_seurat, group.by = "cluster_label")
+plot_clusters <- DimPlot(data1_seurat, group.by = "cluster_label") +
+  ggtitle("Clustered Cells")
 
 plot_clusters
 
