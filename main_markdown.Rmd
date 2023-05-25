@@ -26,7 +26,7 @@ To replicate the code the following packages in comment sections need to be inst
 #install.packages("ggplot2")
 #install.packages("Matrix")
 #install.packages("factoextra")
-
+#install.packages("knitr")
 
 ```
 
@@ -44,6 +44,7 @@ library(mclust, quietly = TRUE)
 library(Matrix)
 library(installr)
 library(factoextra)
+library(knitr)
 
 ```
 
@@ -436,7 +437,7 @@ gmm_model$parameters$variance$sigma
 ```{r}
 
 # Perform discriminant analysis to obtain posterior probabilities
-gmm_da <- MclustDA(pca_embeddings[, 1:2], gmm_model)
+gmm_da <- MclustDA(pca_embeddings[, 1:2], gmm_model$classification, G = 1:10)
 
 # Get the posterior probabilities for each cell
 posterior_probs <- gmm_da$posterior
@@ -461,3 +462,59 @@ fviz_cluster(gmm_model)
 
 
 ```
+```{r}
+
+fviz_mclust(gmm_model, 'uncertainty')
+
+
+```
+
+```{r}
+
+# Create a dataframe with cell IDs, cluster labels, and posterior probabilities
+posterior_data <- data.frame(
+  cell_id = rownames(pca_embeddings),
+  cluster_label = gmm_model$classification,
+  posterior_prob = gmm_model$z
+)
+
+posterior_data_long <- posterior_data %>%
+  pivot_longer(cols = starts_with("posterior_prob"),
+               names_to = "cluster",
+               values_to = "posterior_prob")
+
+cluster_means <- gmm_model$parameters$mean
+cluster_covariances <- gmm_model$parameters$variance$sigma
+
+
+```
+
+```{r}
+
+ggplot(posterior_data_long, aes(x = posterior_prob, color = cluster)) +
+  geom_density() +
+  theme_minimal() +
+  labs(x = "Posterior Probability", y = "Density", color = "Cluster")
+
+
+```
+
+
+
+```{r}
+
+# Extract the posterior probabilities from the gmm_model
+posterior_probs <- gmm_model$z
+
+# Create a heatmap of the posterior probabilities
+heatmap(posterior_probs, 
+        col = colorRampPalette(c("white", "blue"))(100),
+        main = "Posterior Distributions",
+        xlab = "Cluster",
+        ylab = "Cell",
+        cex.axis = 0.8,
+        cex.lab = 0.8)
+
+
+```
+
