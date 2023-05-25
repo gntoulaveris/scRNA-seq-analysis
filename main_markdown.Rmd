@@ -491,10 +491,36 @@ cluster_covariances <- gmm_model$parameters$variance$sigma
 
 ```{r}
 
-ggplot(posterior_data_long, aes(x = posterior_prob, color = cluster)) +
-  geom_density() +
-  theme_minimal() +
-  labs(x = "Posterior Probability", y = "Density", color = "Cluster")
+# Subset the posterior_data_long to include only the cells with the highest posterior probability for each cluster
+subset_data <- posterior_data_long %>%
+  group_by(cell_id) %>%
+  filter(posterior_prob == max(posterior_prob))
+
+
+```
+
+
+```{r}
+
+
+subset_data %>%
+  group_by(cluster_label) %>%
+  ggplot(aes(x = cell_id, y = posterior_prob, fill = as.factor(cluster_label))) +
+  geom_bar(stat = "identity") +
+  labs(x = "Cell ID", y = "Posterior Probability") +
+  facet_wrap(~ cluster_label, ncol = 1, scales = "free_x") +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8),
+    panel.spacing = unit(0.5, "cm"),  # Adjust the spacing between panels
+    strip.text = element_text(size = 12)  # Adjust the size of the facet labels
+  )
+
+```
+
+```{r}
+
+
 
 
 ```
