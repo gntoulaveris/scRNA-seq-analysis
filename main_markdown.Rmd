@@ -25,6 +25,7 @@ To replicate the code the following packages in comment sections need to be inst
 #install.packages("dplyr")
 #install.packages("ggplot2")
 #install.packages("Matrix")
+#install.packages("factoextra")
 
 
 ```
@@ -42,6 +43,7 @@ library(reshape2)
 library(mclust, quietly = TRUE)
 library(Matrix)
 library(installr)
+library(factoextra)
 
 ```
 
@@ -366,7 +368,7 @@ DimPlot(data1_seurat, reduction="pca")
 ### Clustering
 
 #### Clustering with PCA
-The package "mclust" is utilized to cluster the data based on Gaussian Mixture Models. (### explain)
+The package "mclust" is utilized to cluster the data based on Gaussian Mixture Models. It uses Mclust to find the optimal model using the BIC criterion.
 
 
 ```{r}
@@ -384,8 +386,8 @@ pca_embeddings <- as.matrix(data1_seurat@reductions$pca@cell.embeddings)
 
 ```{r}
 
-# perform GMM clustering using the cluster package
-gmm_model <- Mclust(pca_embeddings[ ,1:2])
+# perform GMM clustering and choose best model according to the BIC criterion
+gmm_model <- Mclust(pca_embeddings[ ,1:2], G = 1:10)
 cluster_ids <- gmm_model$classification
 
 # assign the cluster identities to the Seurat object
@@ -404,10 +406,9 @@ data1_seurat@meta.data
 ```{r}
 
 # Visualize clusters with DimPlot
-plot_clusters <- DimPlot(data1_seurat, group.by = "cluster_label") +
+DimPlot(data1_seurat, group.by = "cluster_label") +
   ggtitle("Clustered Cells")
 
-plot_clusters
 
 ```
 
@@ -417,4 +418,46 @@ plot(gmm_model)
 
 ```
 
+```{r}
 
+summary(gmm_model)
+
+
+```
+```{r}
+
+# display the covariance matrices for each cluster
+gmm_model$parameters$variance$sigma
+
+
+
+```
+
+```{r}
+
+# Perform discriminant analysis to obtain posterior probabilities
+gmm_da <- MclustDA(pca_embeddings[, 1:2], gmm_model)
+
+# Get the posterior probabilities for each cell
+posterior_probs <- gmm_da$posterior
+
+
+```
+
+
+
+```{r}
+
+fviz_mclust_bic(gmm_model)
+
+
+
+```
+
+```{r}
+
+fviz_cluster(gmm_model)
+
+
+
+```
