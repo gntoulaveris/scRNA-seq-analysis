@@ -27,6 +27,9 @@ To replicate the code the following packages in comment sections need to be inst
 #install.packages("Matrix")
 #install.packages("factoextra")
 #install.packages("knitr")
+#install.packages("GGally")
+#install.packages("viridis")
+#install.packages("hrbrthemes")
 
 ```
 
@@ -46,6 +49,9 @@ library(installr)
 library(factoextra)
 library(knitr)
 library(tidyr)
+library(hrbrthemes)
+library(GGally)
+library(viridis)
 
 ```
 
@@ -533,17 +539,6 @@ subset_data %>%
 ```
 
 ```{r}
-
-
-install.packages("GGally")
-install.packages("viridis")
-install.packages("hrbrthemes")
-
-library(hrbrthemes)
-library(GGally)
-library(viridis)
-
-
 
 
 ggparcoord(posterior_data, columns = 3:ncol(posterior_data), groupColumn = "cluster_label",
