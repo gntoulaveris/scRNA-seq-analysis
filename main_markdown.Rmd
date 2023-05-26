@@ -45,6 +45,7 @@ library(Matrix)
 library(installr)
 library(factoextra)
 library(knitr)
+library(tidyr)
 
 ```
 
@@ -437,10 +438,10 @@ gmm_model$parameters$variance$sigma
 ```{r}
 
 # Perform discriminant analysis to obtain posterior probabilities
-gmm_da <- MclustDA(pca_embeddings[, 1:2], gmm_model$classification, G = 1:10)
+#gmm_da <- MclustDA(pca_embeddings[, 1:2], gmm_model$classification, G = 1:10)
 
 # Get the posterior probabilities for each cell
-posterior_probs <- gmm_da$posterior
+#posterior_probs <- gmm_da$posterior
 
 
 ```
@@ -462,12 +463,22 @@ fviz_cluster(gmm_model)
 
 
 ```
+
+```{r}
+fviz_mclust(gmm_model, what = c("classification"), geom = "point")
+
+```
+
+
+
 ```{r}
 
 fviz_mclust(gmm_model, 'uncertainty')
 
 
 ```
+
+
 
 ```{r}
 
@@ -485,6 +496,9 @@ posterior_data_long <- posterior_data %>%
 
 cluster_means <- gmm_model$parameters$mean
 cluster_covariances <- gmm_model$parameters$variance$sigma
+cluster_covariances_df <- as.data.frame(cluster_covariances)
+
+cluster_covariances
 
 
 ```
@@ -521,6 +535,25 @@ subset_data %>%
 ```{r}
 
 
+install.packages("GGally")
+install.packages("viridis")
+install.packages("hrbrthemes")
+
+library(hrbrthemes)
+library(GGally)
+library(viridis)
+
+
+
+
+ggparcoord(posterior_data, columns = 3:ncol(posterior_data), groupColumn = "cluster_label",
+           scale = "uniminmax", alphaLines = 0.5, showPoints = TRUE,
+           title = "Cell Posterior Probabilities")+ 
+           scale_color_viridis(discrete=FALSE) 
+
+# Adjust the plot aesthetics and theme
+theme_set(theme_minimal())
+
 
 
 ```
@@ -543,4 +576,5 @@ heatmap(posterior_probs,
 
 
 ```
+
 
