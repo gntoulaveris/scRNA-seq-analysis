@@ -422,7 +422,7 @@ DimPlot(data1_seurat, group.by = "cluster_label") +
 
 ```{r}
 
-plot(gmm_model)
+#plot(gmm_model)
 
 ```
 
@@ -504,6 +504,12 @@ cluster_means <- gmm_model$parameters$mean
 cluster_covariances <- gmm_model$parameters$variance$sigma
 cluster_covariances_df <- as.data.frame(cluster_covariances)
 
+cat("Cluster means:")
+cat("\n")
+cluster_means
+cat("\n")
+cat("Cluster covariance matrices:")
+cat("\n")
 cluster_covariances
 
 
@@ -544,7 +550,8 @@ subset_data %>%
 ggparcoord(posterior_data, columns = 3:ncol(posterior_data), groupColumn = "cluster_label",
            scale = "uniminmax", alphaLines = 0.5, showPoints = TRUE,
            title = "Cell Posterior Probabilities")+ 
-           scale_color_viridis(discrete=FALSE) 
+           scale_color_viridis(discrete=FALSE) +
+           labs(x = "Posterior Probabilities", y = "Probability Value", color = "Cluster Label")
 
 # Adjust the plot aesthetics and theme
 theme_set(theme_minimal())
