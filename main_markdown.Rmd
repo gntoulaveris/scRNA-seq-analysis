@@ -897,6 +897,8 @@ VlnPlot(data1_seurat, features = VariableFeatures(data1_seurat)[1:10])
 
 ```
 
+
+
 ```{r}
 
 joint_probs <- posterior_data_long %>%
