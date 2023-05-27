@@ -293,7 +293,29 @@ reduce_dimensions <- function(seurat_object, technique){
 }
 
 
+
 # Clustering ----
+
+# 
+cluster_MeansCovariances <- function(gmm_model){
+  
+  # This function prints the means and covariance matrices of the clusters.
+  
+  cluster_means <- gmm_model$parameters$mean
+  cluster_covariances <- gmm_model$parameters$variance$sigma
+  cluster_covariances_df <- as.data.frame(cluster_covariances)
+  
+  cat("\n")
+  cat("Cluster means:\n")
+  print(cluster_means)
+  cat("\n")
+  cat("Cluster covariance matrices:\n")
+  print(cluster_covariances)
+  
+  #return(list(cluster_mean, cluster_covariances))
+  
+}
+
 
 #
 GMM_clustering <- function(seurat_object, dim_reduction_technique){
@@ -302,16 +324,171 @@ GMM_clustering <- function(seurat_object, dim_reduction_technique){
   # The optimal GMM model is selected with the BIC criterion.
   
   if (dim_reduction_technique == "pca"){
-    data1_seurat <- ProjectDim(data1_seurat, reduction = "pca", dims = 1:2)
-    pca_embeddings <- as.matrix(data1_seurat@reductions$pca@cell.embeddings)
+    possible_dimensions <- choose_principal_components(seurat_object)
+    chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
     
+    seurat_object <- ProjectDim(seurat_object, reduction = "pca", dims = 1:chosen_dimensions)
+    embeddings <- as.matrix(seurat_object@reductions$pca@cell.embeddings)
+    
+    # perform GMM clustering and choose best model according to the BIC criterion
+    gmm_model <- Mclust(embeddings[ ,1:chosen_dimensions], G = 1:10)
+    cluster_ids <- gmm_model$classification
+    
+    # assign the cluster identities to the Seurat object
+    Idents(seurat_object) <- as.character(cluster_ids)
+    seurat_object$cluster_label <- Idents(seurat_object)
+    
+    print(summary(gmm_model))
+    cluster_MeansCovariances(gmm_model)
+    
+    
+  } else if (dim_reduction_technique == "umap"){
+    possible_dimensions <- choose_principal_components(seurat_object)
+    chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
+    
+    seurat_object <- ProjectDim(seurat_object, reduction = "umap", dims = 1:chosen_dimensions)
+    embeddings <- as.matrix(seurat_object@reductions$umap@cell.embeddings)
+    
+    # perform GMM clustering and choose best model according to the BIC criterion
+    gmm_model <- Mclust(embeddings[ ,1:chosen_dimensions], G = 1:10)
+    cluster_ids <- gmm_model$classification
+    
+    # assign the cluster identities to the Seurat object
+    Idents(seurat_object) <- as.character(cluster_ids)
+    seurat_object$cluster_label <- Idents(seurat_object)
+    
+    print(summary(gmm_model))
+    cluster_MeansCovariances(gmm_model)
+    
+    
+  } else if (dim_reduction_technique == "tsne"){
+    possible_dimensions <- choose_principal_components(seurat_object)
+    chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
+    
+    seurat_object <- ProjectDim(seurat_object, reduction = "tsne", dims = 1:chosen_dimensions)
+    embeddings <- as.matrix(seurat_object@reductions$tsne@cell.embeddings)
+    
+    # perform GMM clustering and choose best model according to the BIC criterion
+    gmm_model <- Mclust(embeddings[ ,1:chosen_dimensions], G = 1:10)
+    cluster_ids <- gmm_model$classification
+    
+    # assign the cluster identities to the Seurat object
+    Idents(seurat_object) <- as.character(cluster_ids)
+    seurat_object$cluster_label <- Idents(seurat_object)
+    
+    print(summary(gmm_model))
+    cluster_MeansCovariances(gmm_model)
+    
+  } else {
+    cat("Dimensionality reduction technique has not been applied!\n")
+    cat("Function accepts: pca, umap, tsne.\n")
+    cat("Check spelling!")
   }
   
+  return(list(seurat_object, gmm_model, embeddings))
   
 } 
 
 
+# Visualization ----
 
+# 
+plot_clustering <- function(seurat_object, gmm_model){
+  
+  # This function creates four plots that showcase the clustering results.
+  
+  # 1. Basic representation of the cells clustering
+  dimplot <- DimPlot(data1_seurat, group.by = "cluster_label") +
+    ggtitle("Clustered Cells")
+  print(dimplot)
+  
+  # 2. BIC values across the PCs
+  bic_lineplot <- fviz_mclust_bic(gmm_model)
+  print(bic_lineplot)
+  
+  # 3. More detailed clustering representation showing the cell IDs as well
+  clusters_plot <- fviz_cluster(gmm_model)
+  print(clusters_plot)
+  
+  # 4. Clustering uncertainty plot
+  uncertainty_plot <- fviz_mclust(gmm_model, 'uncertainty')
+  print(uncertainty_plot)
+  
+  return(list(dimplot, bic_lineplot, clusters_plot, uncertainty_plot))
+  
+}
+
+
+# 
+extract_probability_results <- function(gmm_model, cell_embeddings){
+  
+  # This function extracts the clustering results (classification, embeddings,
+  # posterior probabilites) to be used in further plotting.
+  
+  posterior_data <- data.frame(
+    cell_id = rownames(cell_embeddings),
+    cluster_label = gmm_model$classification,
+    posterior_prob = gmm_model$z
+  )
+  
+  posterior_data_long <- posterior_data %>%
+    pivot_longer(cols = starts_with("posterior_prob"),
+                 names_to = "cluster",
+                 values_to = "posterior_prob")
+  
+  return(list(posterior_data, posterior_data_long))
+  
+}
+
+
+#
+calculate_joint_probabilities <- function(posterior_data_long){
+  
+  # This function calculated the joint posterior probability of each cell.
+  
+  joint_probs <- posterior_data_long %>%
+    group_by(cell_id, cluster_label) %>%
+    summarise(joint_prob = prod(posterior_prob))
+  
+  return(joint_probs)
+  
+}
+
+
+#
+plot_post_probabilities <- function(posterior_data, posterior_data_long, joint_probs){
+  
+  # This function creates three plots of the posterior probabilities of the cells. 
+  
+  # 1. Parallel coordinates chart with the posterior cell probabilities across all states (clusters)
+  post_probs_plot <- ggparcoord(posterior_data, columns = 3:ncol(posterior_data), groupColumn = "cluster_label",
+             scale = "uniminmax", alphaLines = 0.5, showPoints = TRUE,
+             title = "Cell Posterior Probabilities")+ 
+    scale_color_viridis(discrete=FALSE) +
+    labs(x = "Posterior Probabilities", y = "Probability Value", color = "Cluster Label")
+  
+    # Adjust the plot aesthetics and theme
+    theme_set(theme_minimal())
+  
+    
+  # 2. Density of joint cell probabilities across all clusters.
+  density_plot1 <- ggplot(joint_probs, aes(x = joint_prob)) +
+    geom_density(fill = "blue", alpha = 0.5) +
+    labs(x = "Cell Joint Probability", y = "Density", title = "Cell Joint Probability Distribution") +
+    theme_minimal()
+  
+  
+  # 3. Density of joint cell probabilities for each cluster.
+  density_plot2 <- ggplot(joint_probs, aes(x = joint_prob, fill = cluster_label)) +
+    geom_density(alpha = 0.5) +
+    labs(x = "Joint Probability", y = "Density", title = "Cell Joint Probability Distribution by Cluster") +
+    theme_minimal() +
+    facet_wrap(~ cluster_label, ncol = 1)
+  
+  
+  return(list(post_probs_plot, density_plot1, density_plot2))
+  
+}
 
 
 
