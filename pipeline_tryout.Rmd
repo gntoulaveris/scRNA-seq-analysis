@@ -1,0 +1,62 @@
+---
+title: "pipeline_tryout"
+author: "Grigoris Ntoulaveris"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+source("pipeline.R")
+
+```
+
+# Dataset 1
+
+## Data exploration
+```{r}
+
+datasets_path <- "Assignment_3_2023_datasets.zip"
+csv_file <- "dataset1.csv"
+
+data1 <- load_dataset(datasets_path, csv_file)
+
+
+```
+
+```{r}
+summary(data1)
+
+```
+
+```{r}
+melted_data1 <- melt_dataset(data1)
+
+```
+```{r}
+
+library_size <- get_library_size(melted_data1)
+
+```
+```{r}
+
+create_GeneExpression_heatmap(melted_data1)
+
+
+```
+
+
+# Data preprocessing
+
+The analysis of the datasets is performed using the R package "Seurat". It is one of the most famous packages for scRNA seq data analysis that is used in most papers.
+
+```{r}
+data1_copy <- data.frame(data1)
+
+```
+
+```{r}
+data1_seurat <- build_seurat_object(data1_copy, "Dataset 1")
+
+```
+
+
