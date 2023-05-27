@@ -145,14 +145,51 @@ DimPlot(data1_seurat, reduction="pca")
 ## Clustering
 
 ```{r}
+clustering_results <- GMM_clustering(data1_seurat, "pca")
+
+data1_seurat <- clustering_results[[1]]
+gmm_model <- clustering_results[[2]]
+cell_embeddings <- clustering_results[[3]]
+
+```
+
+```{r}
+data1_seurat@meta.data
+
+```
+
+## Visualization
+
+```{r}
+clustering_plots <- plot_clustering(data1_seurat, gmm_model)
+
+```
+
+```{r}
+post_probability_results <- extract_probability_results(gmm_model, cell_embeddings)
+
+posterior_data <- more_clustering_results[[1]]
+posterior_data_long <- more_clustering_results[[2]]
+
+```
+
+```{r}
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
 
 
 ```
 
+```{r}
+plot_post_probabilities(posterior_data, posterior_data_long, cell_joint_probabilities)
+
+```
+
+# UMAP
+
+```{r}
 
 
-
-
+```
 
 
 
