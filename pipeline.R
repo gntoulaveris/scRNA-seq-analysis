@@ -80,7 +80,7 @@ get_library_size <- function(melted_data){
 }
   
 #
-create_GeneExpression_heatmap <- function(melted_data) {
+plot_GeneExpression_heatmap <- function(melted_data) {
   
   # This function creates a gene expression heatmap plot
   
@@ -125,13 +125,90 @@ build_seurat_object <- function(data, project_name){
 
 # Quality Control ----
 
-# Step to remove high quality cells from the downstream analysis.
+# Step to identify low quality cells from the downstream analysis.
+
+#
+find_mitochondrial_genes <- function(seurat_object){
+  
+  # This function finds the mitochondrial genes in a Seurat object,
+  # based on the "MT" label they have.
+  seurat_object[["percent_mito"]] <- PercentageFeatureSet(seurat_object, pattern = "^MT-")
+  
+  return(seurat_object)
+  
+}
 
 
+#
+plot_Features_violin <- function(seurat_object){
+  
+  # This function creates a violin plot of the specified features.
+  
+  vln_plot <- VlnPlot(seurat_object, features = c("nCount_RNA", "nFeature_RNA", "percent_mito"), ncol = 3)
+  
+  return(vln_plot)
+  
+}
 
 
+#
+plot_Features_scatter <- function(seurat_object){
+  
+  # This function creates a scatter plot of the specified features
+  
+  scatter_plot <- FeatureScatter(seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") +
+    geom_smooth(method = 'lm')
+  
+  return(scatter_plot)
+  
+}
 
 
+# Filtering ----
+
+# Step to remove low quality cells from the downstream analysis.
+
+# 
+filter_cells <- function(seurat_object, nFeature_RNA_min, nFeature_RNA_max, percent_mito_max){
+  
+  # This function performs filtering to remove low quality cells, according to 
+  # the specified filtering criteria.
+  
+  filtered_seurat <- subset(seurat_object, 
+                            subset = nFeature_RNA > nFeature_RNA_min & 
+                              nFeature_RNA < nFeature_RNA_max & 
+                              percent_mito < percent_mito_max)
+  
+  return(filtered_seurat)
+  
+}
+
+
+# Data Normalization ----
+
+# The function NormalizeData from the Seurat package is called for this purpose. 
+
+
+# Highly variable gene identification ----
+
+#
+FindPlot_variable_genes <- function(seurat_object){
+  
+  # This function finds the variable genes of the Seurat object and 
+  # creates a plot showing the 10 most variable genes.
+  
+  seurat_object <- FindVariableFeatures(seurat_object, selection.method = "vst", nfeatures = 2000)
+  
+  top10_genes <- head(VariableFeatures(seurat_object), 10)
+  
+  plot_variable_genes <- VariableFeaturePlot(seurat_object)
+  plot_variable_genes <- LabelPoints(plot = plot_variable_genes, points = top10_genes, repel = TRUE)
+  
+  print(plot_variable_genes)
+  
+  return(seurat_object)
+  
+}
 
 
 
