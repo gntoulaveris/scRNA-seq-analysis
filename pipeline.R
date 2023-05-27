@@ -211,10 +211,104 @@ FindPlot_variable_genes <- function(seurat_object){
 }
 
 
+# Data Scaling ----
+
+# 
+scale_data <- function(seurat_object){
+  
+  # This function scales the Seurat object expression data.
+  
+  all_genes <- rownames(seurat_object)
+  seurat_object <- ScaleData(seurat_object, features = all_genes)
+  
+  return(seurat_object)
+  
+}
 
 
+# Dimensionality Reduction ----
+
+# It is performed in three different ways: PCA, UMAP, tSNE.
+
+#
+choose_principal_components <- function(seurat_object){
+  
+  # This function discovers in a quantitave way the optimum number of PCs to be used
+  # for dimensionality reduction. 
+  #   Metric 1: the point where the PCs only contribute 5% of stdv 
+  #             and the PCs cumulatively contribute 90% of the stdv.
+  #   Metric 2: the point where the percent change in variation between the consecutive PCs is less than 0.1%.
+  
+  pct <- seurat_object[["pca"]]@stdev / sum(seurat_object[["pca"]]@stdev) * 100
+  # calculate cumulative percents for each PC
+  cum_pct <- cumsum(pct)
+  
+  metric1 <- which(cum_pct > 90 & pct < 5)[1]
+  metric2 <- sort(which((pct[1:length(pct) - 1] - pct[2:length(pct)]) > 0.1), decreasing = T)[1] + 1
+  
+  return(list(metric1, metric2))
+  
+}
 
 
+#
+reduce_dimensions <- function(seurat_object, technique){
+  
+  # This function reduces the dimensionality of the dataset using either PCA, UMAP or tSNE.
+  # The user specifies which dimensionality reduction technique will be applied.
+  # Arguments:
+        # -seurat_object
+        # -technique (str): dimensionality reduction technique to be applied
+                            # aceepts: pca, umap, tsne
+  
+  if (technique == "pca"){
+    seurat_object <- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
+    possible_dimensions <- choose_principal_components(seurat_object)
+    chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
+    
+    cells_num <- seurat_object@assays[["RNA"]]@counts@Dim[2]
+    pc_heatmap <- DimHeatmap(seurat_object, dims = 1:9, cells = cells_num, balanced = TRUE)
+    elbow_plot <- ElbowPlot(seurat_object)
+    print(pc_heatmap)
+    print(elbow_plot)
+    
+  } else if (technique == "umap"){
+    seurat_object <- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
+    possible_dimensions <- choose_principal_components(seurat_object)
+    chosen_dimensions <- max(possible_dimensions[[1]], possible_dimensions[[2]])
+    seurat_object <- RunUMAP(seurat_object, dims = 1:chosen_dimensions)
+    
+  } else if (technique == "tsne") {
+    seurat_object <- RunPCA(seurat_object, features = VariableFeatures(object = seurat_object))
+    seurat_object <- RunTSNE(seurat_object)
+    
+  } else {
+    cat("Dimensionality reduction technique not found!\n")
+    cat("Function accepts: pca, umap, tsne.\n")
+    cat("Check spelling!")
+  }
+  
+  return(seurat_object)
+  
+}
+
+
+# Clustering ----
+
+#
+GMM_clustering <- function(seurat_object, dim_reduction_technique){
+  
+  # This function clusters the cells using Gaussian Mixture Models. 
+  # The optimal GMM model is selected with the BIC criterion.
+  
+  if (dim_reduction_technique == "pca"){
+    data1_seurat <- ProjectDim(data1_seurat, reduction = "pca", dims = 1:2)
+    pca_embeddings <- as.matrix(data1_seurat@reductions$pca@cell.embeddings)
+    
+  }
+  
+  
+} 
 
 
 
