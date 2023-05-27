@@ -12,7 +12,7 @@ source("pipeline.R")
 
 # Dataset 1
 
-## Data exploration
+# Data exploration
 ```{r}
 
 datasets_path <- "Assignment_3_2023_datasets.zip"
@@ -24,7 +24,7 @@ data1 <- load_dataset(datasets_path, csv_file)
 ```
 
 ```{r}
-summary(data1)
+#summary(data1)
 
 ```
 
@@ -39,7 +39,7 @@ library_size <- get_library_size(melted_data1)
 ```
 ```{r}
 
-create_GeneExpression_heatmap(melted_data1)
+plot_GeneExpression_heatmap(melted_data1)
 
 
 ```
@@ -58,5 +58,78 @@ data1_copy <- data.frame(data1)
 data1_seurat <- build_seurat_object(data1_copy, "Dataset 1")
 
 ```
+
+
+# Quality Control
+
+Quality control is an essential step in a scRNA seq pipeline to ensure reliability and accuracy for the data. It is performed in order to filter out low-quality cells. 
+
+Low-quality cells can cells that express too little genes or cells that express too many genes, which can be a case of multiple cells clustered together and recognized as a single cell. The cells that have a high expression of mitochondrial genes also need to be filtered out, because high mitochondrial gene expression is observed in dying cells.
+
+These datasets have no determined mitochondrial genes. However, this step is included in the pipeline so that it can be applicable to other real scRNA seq datasets.
+
+```{r}
+data1_seurat <- find_mitochondrial_genes(data1_seurat)
+print(data1_seurat@meta.data)
+
+```
+
+In the following plots the nCount_RNA corresponds to the total number of RNA molecules detected in a cell, which can be considered as a measure of the cell's RNA content or overall expression level. nFeature_RNA represents the count of unique genes or features with non-zero expression in a cell and is an indicator of the diversity of expressed genes in a cell. percent_mito corresponds to the percentage of mitochondrial genes that are expressed in a cell and a high number is indicative of cells of low-quality.
+
+Based on the following violin plots it appears that there is an almost even distribution of cells with a high and low number of total RNA molecules. The same is true when we consider the total amount of unique genes in each cell. For both metrics the spectrum of the values is not very large though, indicating that the cells of the dataset are mostly of the same quality and expression. No mitochondrial gene expression was also detected therefore there are no dying cells in the mixture.
+
+```{r}
+plot_Features_violin(data1_seurat)
+
+```
+
+In the following plot the total number of RNA molecules and the total number of unique genes for each cell are plotted together, to ensure that the previous visualization is not misleading in terms of cell quality. Good quality cells usually have a high value in both metrics. If many cells are clustered towards the bottom right of the plot it would mean that only a few number of unique genes were detected and those are sequenced continuously providing a misleading high number of transcripts. If many cells are clustered towards the top left of the plot it would mean that the sequencer had discovered many unique genes but they wouldn't be deeply sequenced enough to provide meaningful reasults.
+
+As it stands most of the cells seem to be of good quality, however there is need for removal of a small number of low-quality cells.
+
+```{r}
+plot_Features_scatter(data1_seurat)
+
+```
+# Filtering
+
+In the filtering step low-quality cells are removed from the dataset, based on the results of the quality control.
+
+```{r}
+data1_seurat <- filter_cells(data1_seurat, 
+                             nFeature_RNA_min = 160, nFeature_RNA_max = 1000, percent_mito_max = 5)
+
+data1_seurat
+```
+
+# Normalization
+In order to be able to compare the levels of expression across multiple cells the data need to be normalized. The gene expression measurements for each cell is divided by the total expression of all cells, is then multiplied by a scaling factor. The result is also transformed into log space.
+
+```{r}
+data1_seurat <- NormalizeData(data1_seurat)
+
+```
+
+# Highly variable genes identification
+Normally, at this step the highly variable genes are identified. Here, because the genes were only 200, all of them were considered highly variable. The 10 most variable genes are identified and plotted below.
+
+```{r}
+
+# find all high variable genes
+data1_seurat <- FindPlot_variable_genes(data1_seurat)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
