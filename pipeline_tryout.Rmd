@@ -120,11 +120,34 @@ data1_seurat <- FindPlot_variable_genes(data1_seurat)
 
 ```
 
+# Scaling
+
+This step is performed to remove unwanted variations in the data, that occur because of technical issues (eg batch effect) or biological issues (eg difference state of the cell cycle between some cells). These variations need to be removed so that the cells won't cluster together based on them, but rather based on biological similarity and effect.
 
 
+```{r}
+data1_seurat <- scale_data(data1_seurat)
+```
+
+# PCA
+
+## Dimensionality Reduction
+
+```{r}
+data1_seurat <- reduce_dimensions(data1_seurat, "pca")
+
+```
+```{r}
+DimPlot(data1_seurat, reduction="pca")
+
+```
+
+## Clustering
+
+```{r}
 
 
-
+```
 
 
 
