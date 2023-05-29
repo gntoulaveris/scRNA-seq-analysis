@@ -19,7 +19,9 @@ Visualization of the clustering results was performed either by utilizing premad
 ## Dependencies
 In order to successfully implement the analysis of a scRNA seq dataset with the scRNA_pipeline code the following dependencies must be met. For ease of implementation a dataset#_analysis markdown file can be utilized with the user only having to pass on the following dependencies.
 
-* The datasets need to be inside a zip file and that zip file needs to be inside the working directory.
+* Pipeline R file, implementation (analysis) markdown file(s) and datasets' folder need to be in the same working directory.
+* The working directory must be set by the user before the code is run.
+* The datasets need to be inside a zip folder and that zip file needs to be inside the working directory.
 * The datasets need to be in .csv format.
 
 * The scRNA_pipeline needs to be called inside the R markdown file (command: source("scRNA_pipeline.R"))
