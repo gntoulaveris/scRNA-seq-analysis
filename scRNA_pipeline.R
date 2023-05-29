@@ -16,6 +16,7 @@
 #install.packages("GGally")
 #install.packages("viridis")
 #install.packages("hrbrthemes")
+#install.packages("RColorBrewer")
 
 library(rlang)
 library(htmltools)
@@ -34,6 +35,7 @@ library(tidyr)
 library(hrbrthemes)
 library(GGally)
 library(viridis)
+library(RColorBrewer)
 
 
 # Load dataset ----
@@ -46,6 +48,17 @@ load_dataset <- function(zip_file, csv_file) {
   print(head(data))
   
   return(data)
+}
+
+
+#
+get_dataset_name <- function(csv_file){
+  
+  # This function extracts the dataset name from the csv filename.
+  dataset_name <- tools::file_path_sans_ext(csv_file)
+  
+  return(dataset_name)
+  
 }
 
 
@@ -87,7 +100,7 @@ plot_GeneExpression_heatmap <- function(melted_data) {
   heatmap_plot <- ggplot(melted_data, aes(x = genes, y = cells, fill = expression)) +
     geom_tile() +
     scale_fill_gradient(low = "white", high = "blue") +  
-    labs(x = "Genes", y = "Cells", title = "Gene Expression Heatmap") +
+    labs(x = "Genes", y = "Cells", title = paste("Gene Expression Heatmap (", dataset_name, ")")) +
     theme(axis.text = element_blank())
   
   return(heatmap_plot)
@@ -202,7 +215,8 @@ FindPlot_variable_genes <- function(seurat_object){
   top10_genes <- head(VariableFeatures(seurat_object), 10)
   
   plot_variable_genes <- VariableFeaturePlot(seurat_object)
-  plot_variable_genes <- LabelPoints(plot = plot_variable_genes, points = top10_genes, repel = TRUE)
+  plot_variable_genes <- LabelPoints(plot = plot_variable_genes, points = top10_genes, repel = TRUE) +
+    ggtitle(paste("Variable Genes Plot of", dataset_name))
   
   print(plot_variable_genes)
   
@@ -268,7 +282,9 @@ reduce_dimensions <- function(seurat_object, technique){
     
     cells_num <- seurat_object@assays[["RNA"]]@counts@Dim[2]
     pc_heatmap <- DimHeatmap(seurat_object, dims = 1:9, cells = cells_num, balanced = TRUE)
-    elbow_plot <- ElbowPlot(seurat_object)
+    
+    elbow_plot <- ElbowPlot(seurat_object) +
+      labs(title = paste("Elbow Plot for", dataset_name))
     dimplot_unclustered <- DimPlot(seurat_object, reduction="pca")
     print(pc_heatmap)
     print(elbow_plot)
@@ -399,7 +415,7 @@ GMM_clustering <- function(seurat_object, dim_reduction_technique){
 # Visualization ----
 
 # 
-plot_clustering <- function(seurat_object, gmm_model){
+plot_clustering <- function(dataset_name, seurat_object, gmm_model){
   
   # This function creates five plots that showcase the clustering results.
   
@@ -407,27 +423,31 @@ plot_clustering <- function(seurat_object, gmm_model){
   color_palette <- brewer.pal(num_clusters, "Set1")
   
   # 1. Basic representation of the cells clustering
-  dimplot <- DimPlot(data1_seurat, group.by = "cluster_label") +
-    ggtitle("Clustered Cells") +
+  dimplot <- DimPlot(seurat_object, group.by = "cluster_label") +
+    ggtitle(paste("Clustered Cells (", dataset_name, ")")) +
     scale_color_manual(values = color_palette)
   print(dimplot)
   
   # 2. BIC values across the PCs
-  bic_lineplot <- fviz_mclust_bic(gmm_model) 
+  bic_lineplot <- fviz_mclust_bic(gmm_model) +
+    ggtitle(paste("Model selection (", dataset_name, ")"))
   print(bic_lineplot)
   
   # 3. More detailed clustering representation showing the cell IDs as well
   clusters_plot <- fviz_cluster(gmm_model) +
+    ggtitle(paste("Cluster Plot (", dataset_name, ")")) +
     scale_color_manual(values = color_palette)
   print(clusters_plot)
   
   # 4. Clustering uncertainty plot
   uncertainty_plot <- fviz_mclust(gmm_model, 'uncertainty') +
+    ggtitle(paste("Cluster Plot (", dataset_name, ")")) +
     scale_color_manual(values = color_palette)
   print(uncertainty_plot)
   
   # 5. Cluster density plot
-  density_plot <- plot(gmm_model, what = "density")
+  density_plot <- plot(gmm_model, what = "density") 
+  title(main = paste("Density Plot (", dataset_name, ")"), line = +1)
   
   
   return(list(dimplot, bic_lineplot, clusters_plot, uncertainty_plot, density_plot))
@@ -472,7 +492,7 @@ calculate_joint_probabilities <- function(posterior_data_long){
 
 
 #
-plot_post_probabilities <- function(posterior_data, posterior_data_long, joint_probs){
+plot_post_probabilities <- function(dataset_name, posterior_data, posterior_data_long, joint_probs){
   
   # This function creates one plots of the posterior probabilities of the cells 
   # and three plots for their joint probabilities.
@@ -481,10 +501,10 @@ plot_post_probabilities <- function(posterior_data, posterior_data_long, joint_p
   
   # 1. Parallel coordinates chart with the posterior cell probabilities across all states (clusters)
   post_probs_plot <- ggparcoord(posterior_data, columns = 3:ncol(posterior_data), groupColumn = "cluster_label",
-             scale = "uniminmax", alphaLines = 0.5, showPoints = TRUE,
-             title = "Cell Posterior Probabilities") + 
+             scale = "uniminmax", alphaLines = 0.5, showPoints = TRUE) +
     scale_color_viridis(discrete=FALSE) +
-    labs(x = "Posterior Probabilities", y = "Probability Value", color = "Cluster Label")
+    labs(x = "Posterior Probabilities", y = "Probability Value", color = "Cluster Label",
+         title = paste("Cell Posterior Probabilities (", dataset_name, ")")) 
   
     # Adjust the plot aesthetics and theme
     theme_set(theme_minimal())
@@ -493,14 +513,16 @@ plot_post_probabilities <- function(posterior_data, posterior_data_long, joint_p
   # 2. Density of joint cell probabilities across all clusters.
   density_plot1 <- ggplot(joint_probs, aes(x = joint_prob)) +
     geom_density(fill = "blue", alpha = 0.5) +
-    labs(x = "Cell Joint Probability", y = "Density", title = "Cell Joint Probability Distribution") +
+    labs(x = "Cell Joint Probability", y = "Density", 
+         title = paste("Cell Joint Probability Distribution (", dataset_name, ")")) +
     theme_minimal()
   
   
   # 3. Density of joint cell probabilities for each cluster.
   density_plot2 <- ggplot(joint_probs, aes(x = joint_prob, fill = factor(cluster_label))) +
     geom_density(alpha = 0.5) +
-    labs(x = "Joint Probability", y = "Density", title = "Cell Joint Probability Distribution by Cluster") +
+    labs(x = "Joint Probability", y = "Density", 
+         title = paste("Cell Joint Probability Distribution by Cluster (", dataset_name, ")")) +
     theme_minimal() +
     facet_wrap(~ cluster_label, ncol = 1) +
     guides(fill = guide_legend(title = "Cluster Label")) +
@@ -510,7 +532,7 @@ plot_post_probabilities <- function(posterior_data, posterior_data_long, joint_p
   scatter_plot <- ggplot(data = joint_probs) + 
     geom_point(mapping = aes(x = cell_id, y = joint_prob, color = factor(cluster_label))) +
     theme(axis.text.x = element_blank()) +
-    labs(title = "Cell Joint Probabilities",
+    labs(title = paste("Cell Joint Probabilities (", dataset_name, ")"),
          x = "Cell ID",
          y = "Joint Probability",
          color = "Cluster Label") +
