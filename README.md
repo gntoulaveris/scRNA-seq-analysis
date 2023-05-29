@@ -17,7 +17,7 @@ Visualization of the clustering results was performed either by utilizing premad
 
 
 ## Dependencies
-In order to successful implemet the analysis of a scRNA seq dataset with the scRNA_pipeline code the following dependencies must be met. For ease of implementation a dataset#_analysis markdown file can be utilized with the user only having to pass on the following dependencies.
+In order to successfully implement the analysis of a scRNA seq dataset with the scRNA_pipeline code the following dependencies must be met. For ease of implementation a dataset#_analysis markdown file can be utilized with the user only having to pass on the following dependencies.
 
 * The datasets need to be inside a zip file and that zip file needs to be inside the working directory.
 * The datasets need to be in .csv format.
