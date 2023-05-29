@@ -10,36 +10,37 @@ source("scRNA_pipeline.R")
 
 ```
 
-# Dataset 1
 
 # Data exploration
 ```{r}
 
 datasets_path <- "Assignment_3_2023_datasets.zip"
 csv_file <- "dataset1.csv"
+dataset_name <- get_dataset_name(csv_file)
 
-data1 <- load_dataset(datasets_path, csv_file)
+data <- load_dataset(datasets_path, csv_file)
 
-
-```
-
-```{r}
-#summary(data1)
 
 ```
 
 ```{r}
-melted_data1 <- melt_dataset(data1)
+#summary(data)
+
+```
+
+```{r}
+melted_data <- melt_dataset(data)
 
 ```
 ```{r}
 
-library_size <- get_library_size(melted_data1)
+library_size <- get_library_size(melted_data)
 
 ```
+
 ```{r}
 
-plot_GeneExpression_heatmap(melted_data1)
+plot_GeneExpression_heatmap(melted_data)
 
 
 ```
@@ -50,12 +51,12 @@ plot_GeneExpression_heatmap(melted_data1)
 The analysis of the datasets is performed using the R package "Seurat". It is one of the most famous packages for scRNA seq data analysis that is used in most papers.
 
 ```{r}
-data1_copy <- data.frame(data1)
+data_copy <- data.frame(data)
 
 ```
 
 ```{r}
-data1_seurat <- build_seurat_object(data1_copy, "Dataset 1")
+data_seurat <- build_seurat_object(data_copy, dataset_name)
 
 ```
 
@@ -69,8 +70,8 @@ Low-quality cells can cells that express too little genes or cells that express 
 These datasets have no determined mitochondrial genes. However, this step is included in the pipeline so that it can be applicable to other real scRNA seq datasets.
 
 ```{r}
-data1_seurat <- find_mitochondrial_genes(data1_seurat)
-print(data1_seurat@meta.data)
+data_seurat <- find_mitochondrial_genes(data_seurat)
+print(data_seurat@meta.data)
 
 ```
 
@@ -79,7 +80,7 @@ In the following plots the nCount_RNA corresponds to the total number of RNA mol
 Based on the following violin plots it appears that there is an almost even distribution of cells with a high and low number of total RNA molecules. The same is true when we consider the total amount of unique genes in each cell. For both metrics the spectrum of the values is not very large though, indicating that the cells of the dataset are mostly of the same quality and expression. No mitochondrial gene expression was also detected therefore there are no dying cells in the mixture.
 
 ```{r}
-plot_Features_violin(data1_seurat)
+plot_Features_violin(data_seurat)
 
 ```
 
@@ -88,7 +89,7 @@ In the following plot the total number of RNA molecules and the total number of 
 As it stands most of the cells seem to be of good quality, however there is need for removal of a small number of low-quality cells.
 
 ```{r}
-plot_Features_scatter(data1_seurat)
+plot_Features_scatter(data_seurat)
 
 ```
 # Filtering
@@ -96,17 +97,17 @@ plot_Features_scatter(data1_seurat)
 In the filtering step low-quality cells are removed from the dataset, based on the results of the quality control.
 
 ```{r}
-data1_seurat <- filter_cells(data1_seurat, 
+data_seurat <- filter_cells(data_seurat, 
                              nFeature_RNA_min = 160, nFeature_RNA_max = 1000, percent_mito_max = 5)
 
-data1_seurat
+data_seurat
 ```
 
 # Normalization
 In order to be able to compare the levels of expression across multiple cells the data need to be normalized. The gene expression measurements for each cell is divided by the total expression of all cells, is then multiplied by a scaling factor. The result is also transformed into log space.
 
 ```{r}
-data1_seurat <- NormalizeData(data1_seurat)
+data_seurat <- NormalizeData(data_seurat)
 
 ```
 
@@ -116,7 +117,7 @@ Normally, at this step the highly variable genes are identified. Here, because t
 ```{r}
 
 # find all high variable genes
-data1_seurat <- FindPlot_variable_genes(data1_seurat)
+data_seurat <- FindPlot_variable_genes(data_seurat)
 
 ```
 
@@ -126,7 +127,7 @@ This step is performed to remove unwanted variations in the data, that occur bec
 
 
 ```{r}
-data1_seurat <- scale_data(data1_seurat)
+data_seurat <- scale_data(data_seurat)
 ```
 
 # PCA
@@ -134,7 +135,7 @@ data1_seurat <- scale_data(data1_seurat)
 ## Dimensionality Reduction
 
 ```{r}
-data1_seurat <- reduce_dimensions(data1_seurat, "pca")
+data_seurat <- reduce_dimensions(data_seurat, "pca")
 
 ```
 
@@ -142,16 +143,16 @@ data1_seurat <- reduce_dimensions(data1_seurat, "pca")
 ## Clustering
 
 ```{r}
-clustering_results <- GMM_clustering(data1_seurat, "pca")
+clustering_results <- GMM_clustering(data_seurat, "pca")
 
-data1_seurat <- clustering_results[[1]]
+data_seurat <- clustering_results[[1]]
 gmm_model <- clustering_results[[2]]
 cell_embeddings <- clustering_results[[3]]
 
 ```
 
 ```{r}
-data1_seurat@meta.data
+data_seurat@meta.data
 
 ```
 
@@ -160,7 +161,8 @@ data1_seurat@meta.data
 ## Visualization
 
 ```{r}
-clustering_plots <- plot_clustering(data1_seurat, gmm_model)
+
+clustering_plots <- plot_clustering(dataset_name, data_seurat, gmm_model)
 
 ```
 
@@ -179,7 +181,7 @@ cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
 ```
 
 ```{r}
-plot_post_probabilities(posterior_data, posterior_data_long, cell_joint_probabilities)
+plot_post_probabilities(dataset_name, posterior_data, posterior_data_long, cell_joint_probabilities)
 
 ```
 
@@ -190,7 +192,7 @@ plot_post_probabilities(posterior_data, posterior_data_long, cell_joint_probabil
 ## Dimensionality Reduction
 
 ```{r}
-data1_seurat <- reduce_dimensions(data1_seurat, "umap")
+data_seurat <- reduce_dimensions(data_seurat, "umap")
 
 ```
 
@@ -198,9 +200,9 @@ data1_seurat <- reduce_dimensions(data1_seurat, "umap")
 ## Clustering
 
 ```{r}
-clustering_results <- GMM_clustering(data1_seurat, "umap")
+clustering_results <- GMM_clustering(data_seurat, "umap")
 
-data1_seurat <- clustering_results[[1]]
+data_seurat <- clustering_results[[1]]
 gmm_model <- clustering_results[[2]]
 cell_embeddings <- clustering_results[[3]]
 
@@ -208,7 +210,7 @@ cell_embeddings <- clustering_results[[3]]
 
 
 ```{r}
-data1_seurat@meta.data
+data_seurat@meta.data
 
 ```
 
@@ -217,7 +219,7 @@ data1_seurat@meta.data
 ## Visualization
 
 ```{r}
-clustering_plots <- plot_clustering(data1_seurat, gmm_model)
+clustering_plots <- plot_clustering(dataset_name, data_seurat, gmm_model)
 
 ```
 
@@ -236,7 +238,7 @@ cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
 ```
 
 ```{r}
-plot_post_probabilities(posterior_data, posterior_data_long, cell_joint_probabilities)
+plot_post_probabilities(dataset_name, posterior_data, posterior_data_long, cell_joint_probabilities)
 
 ```
 
@@ -247,7 +249,7 @@ plot_post_probabilities(posterior_data, posterior_data_long, cell_joint_probabil
 ## Dimensionality Reduction
 
 ```{r}
-data1_seurat <- reduce_dimensions(data1_seurat, "tsne")
+data_seurat <- reduce_dimensions(data_seurat, "tsne")
 
 ```
 
@@ -255,16 +257,16 @@ data1_seurat <- reduce_dimensions(data1_seurat, "tsne")
 ## Clustering
 
 ```{r}
-clustering_results <- GMM_clustering(data1_seurat, "tsne")
+clustering_results <- GMM_clustering(data_seurat, "tsne")
 
-data1_seurat <- clustering_results[[1]]
+data_seurat <- clustering_results[[1]]
 gmm_model <- clustering_results[[2]]
 cell_embeddings <- clustering_results[[3]]
 
 ```
 
 ```{r}
-data1_seurat@meta.data
+data_seurat@meta.data
 
 ```
 
@@ -272,7 +274,7 @@ data1_seurat@meta.data
 ## Visualization
 
 ```{r}
-clustering_plots <- plot_clustering(data1_seurat, gmm_model)
+clustering_plots <- plot_clustering(dataset_name, data_seurat, gmm_model)
 
 ```
 
@@ -291,7 +293,7 @@ cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
 ```
 
 ```{r}
-plot_post_probabilities(posterior_data, posterior_data_long, cell_joint_probabilities)
+plot_post_probabilities(dataset_name, posterior_data, posterior_data_long, cell_joint_probabilities)
 
 ```
 
