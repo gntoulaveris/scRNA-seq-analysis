@@ -182,7 +182,7 @@ plot_Features_scatter <- function(seurat_object){
 # Step to remove low quality cells from the downstream analysis.
 
 # 
-filter_cells <- function(seurat_object, nFeature_RNA_min, nFeature_RNA_max, percent_mito_max){
+filter_cells <- function(seurat_object, nFeature_RNA_min = 160, nFeature_RNA_max = 1000, percent_mito_max = 5){
   
   # This function performs filtering to remove low quality cells, according to 
   # the specified filtering criteria.
@@ -460,7 +460,7 @@ plot_clustering <- function(dataset_name, seurat_object, gmm_model){
 extract_probability_results <- function(gmm_model, cell_embeddings){
   
   # This function extracts the clustering results (classification, embeddings,
-  # posterior probabilites) to be used in further plotting.
+  # posterior probabilities) to be used in further plotting.
   
   posterior_data <- data.frame(
     cell_id = rownames(cell_embeddings),
