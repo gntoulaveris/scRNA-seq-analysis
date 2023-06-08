@@ -14,7 +14,7 @@ source("scRNA_pipeline.R")
 # Data exploration
 ```{r}
 
-datasets_path <- "Assignment_3_2023_datasets.zip"
+datasets_path <- "synthetic_datasets.zip"
 csv_file <- "dataset1.csv"
 dataset_name <- get_dataset_name(csv_file)
 
@@ -84,7 +84,7 @@ plot_Features_violin(data_seurat)
 
 ```
 
-In the following plot the total number of RNA molecules and the total number of unique genes for each cell are plotted together, to ensure that the previous visualization is not misleading in terms of cell quality. Good quality cells usually have a high value in both metrics. If many cells are clustered towards the bottom right of the plot it would mean that only a few number of unique genes were detected and those are sequenced continuously providing a misleading high number of transcripts. If many cells are clustered towards the top left of the plot it would mean that the sequencer had discovered many unique genes but they wouldn't be deeply sequenced enough to provide meaningful reasults.
+In the following plot the total number of RNA molecules and the total number of unique genes for each cell are plotted together, to ensure that the previous visualization is not misleading in terms of cell quality. Good quality cells usually have a high value in both metrics. If many cells are clustered towards the bottom right of the plot it would mean that only a few number of unique genes were detected and those are sequenced continuously providing a misleading high number of transcripts. If many cells are clustered towards the top left of the plot it would mean that the sequencer had discovered many unique genes but they wouldn't be deeply sequenced enough to provide meaningful results.
 
 As it stands most of the cells seem to be of good quality, however there is need for removal of a small number of low-quality cells.
 
@@ -175,7 +175,7 @@ posterior_data_long <- post_probability_results[[2]]
 ```
 
 ```{r}
-cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long, gmm_model)
 
 
 ```
@@ -232,7 +232,7 @@ posterior_data_long <- post_probability_results[[2]]
 ```
 
 ```{r}
-cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long, gmm_model)
 
 
 ```
@@ -287,7 +287,7 @@ posterior_data_long <- post_probability_results[[2]]
 ```
 
 ```{r}
-cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long, gmm_model)
 
 
 ```
