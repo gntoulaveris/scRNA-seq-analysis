@@ -14,7 +14,7 @@ source("scRNA_pipeline.R")
 # Data exploration
 ```{r}
 
-datasets_path <- "Assignment_3_2023_datasets.zip"
+datasets_path <- "synthetic_datasets.zip"
 csv_file <- "dataset3.csv"
 dataset_name <- get_dataset_name(csv_file)
 
@@ -175,7 +175,7 @@ posterior_data_long <- post_probability_results[[2]]
 ```
 
 ```{r}
-cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long, gmm_model)
 
 
 ```
@@ -232,7 +232,7 @@ posterior_data_long <- post_probability_results[[2]]
 ```
 
 ```{r}
-cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long, gmm_model)
 
 
 ```
@@ -287,7 +287,7 @@ posterior_data_long <- post_probability_results[[2]]
 ```
 
 ```{r}
-cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long)
+cell_joint_probabilities <- calculate_joint_probabilities(posterior_data_long, gmm_model)
 
 
 ```
