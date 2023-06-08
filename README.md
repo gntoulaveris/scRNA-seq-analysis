@@ -17,15 +17,20 @@ Visualization of the clustering results was performed either by utilizing premad
 
 
 ## Dependencies
-In order to successfully implement the analysis of a scRNA seq dataset with the scRNA_pipeline code the following dependencies must be met. For ease of implementation a dataset#_analysis markdown file can be utilized with the user only having to pass on the following dependencies.
+In order to successfully implement the analysis of a scRNA seq dataset with the scRNA_pipeline code the following dependencies must be met. For ease of implementation a dataset#_analysis markdown file from the deliverables can be utilized, with the user only having to pass on the following dependencies.
 
-* Pipeline R file, implementation (analysis) markdown file(s) and datasets' folder need to be in the same working directory.
-* The working directory must be set by the user before the code is run.
-* The datasets need to be inside a zip folder and that zip file needs to be inside the working directory.
-* The datasets need to be in .csv format.
+1.	Pipeline R file, implementation (analysis) markdown file(s) and datasets' folder need to be in the same working directory.
 
-* The scRNA_pipeline needs to be called inside the R markdown file (command: source("scRNA_pipeline.R"))
-* The user needs to specify as variables the zip file name and the dataset .csv name and pass them as arguments to the load_dataset function.
-* The user needs to call the get_dataset_name function and pass as argument the previously created variable for the dataset .csv file. The output of the function should be stored in a variable called dataset_name.
+2.	The datasets need to be inside a zip folder and in csv format.
 
-After the above steps the rest of the markdown file runs automatically. If an example markdown file is not used, then the user can call the functions stored in scRNA_pipeline in order of appearence and simply pass to them as arguments the above listed variables.
+3.	The working directory must be set by the user before the code is run.
+
+4.	The scRNA_pipeline needs to be called inside the R markdown file (command: source("scRNA_pipeline.R")) – already met if one of the markdown files is used.
+
+5.	The user needs to specify as variables the zip file name and the dataset .csv name and pass them as arguments to the load_dataset function. 
+If a markdown file is used, then all the user has to do is to change in code chunk 2 the name of the dataset being passed to the csv_file variable, to reflect the name of the dataset that needs to be analyzed. Similarly, if the datasets are in a folder with a different name or location than "Assignment_3_2023_datasets.zip" then the user needs to specify the path to that folder and its name.
+
+6.	The user needs to call the get_dataset_name function and pass as argument the previously created variable for the dataset .csv file. The output of the function should be stored in a variable called dataset_name. – already met if one of the markdown files is used.
+
+In the case where one of the R markdown files has been used as a template for the analysis, after the above steps the rest of the markdown file runs automatically. If an example markdown file is not used, then the user can call the functions stored in scRNA_pipeline in order of appearance and simply pass to them as arguments the above listed variables.
+
