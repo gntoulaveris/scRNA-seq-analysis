@@ -347,7 +347,6 @@ GMM_clustering <- function(seurat_object, dim_reduction_technique){
     possible_dimensions <- choose_principal_components(seurat_object)
     chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
     
-    seurat_object <- ProjectDim(seurat_object, reduction = "pca", dims = 1:chosen_dimensions)
     embeddings <- as.matrix(seurat_object@reductions$pca@cell.embeddings)
     
     # perform GMM clustering and choose best model according to the BIC criterion
@@ -363,10 +362,7 @@ GMM_clustering <- function(seurat_object, dim_reduction_technique){
     
     
   } else if (dim_reduction_technique == "umap"){
-    possible_dimensions <- choose_principal_components(seurat_object)
-    chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
-    
-    seurat_object <- ProjectDim(seurat_object, reduction = "umap", dims = 1:chosen_dimensions)
+   
     embeddings <- as.matrix(seurat_object@reductions$umap@cell.embeddings)
     
     # perform GMM clustering and choose best model according to the BIC criterion
@@ -383,10 +379,7 @@ GMM_clustering <- function(seurat_object, dim_reduction_technique){
     
     
   } else if (dim_reduction_technique == "tsne"){
-    possible_dimensions <- choose_principal_components(seurat_object)
-    chosen_dimensions <- min(possible_dimensions[[1]], possible_dimensions[[2]])
     
-    seurat_object <- ProjectDim(seurat_object, reduction = "tsne", dims = 1:chosen_dimensions)
     embeddings <- as.matrix(seurat_object@reductions$tsne@cell.embeddings)
     
     # perform GMM clustering and choose best model according to the BIC criterion
@@ -479,13 +472,15 @@ extract_probability_results <- function(gmm_model, cell_embeddings){
 
 
 #
-calculate_joint_probabilities <- function(posterior_data_long){
+calculate_joint_probabilities <- function(posterior_data_long, gmm_model){
   
   # This function calculated the joint posterior probability of each cell.
   
+  weights <- gmm_model$parameters$pro
+  
   joint_probs <- posterior_data_long %>%
     group_by(cell_id, cluster_label) %>%
-    summarise(joint_prob = prod(posterior_prob))
+    summarise(joint_prob = prod(posterior_prob * weights[cluster_label]))
   
   return(joint_probs)
   
